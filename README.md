@@ -1,7 +1,15 @@
 # Hadoop Exporter for Prometheus
 Exports hadoop metrics via HTTP for Prometheus consumption.
 
-Help on flags of namenode:
+How to build
+```
+go get github.com/prometheus/client_golang/prometheus
+go get github.com/prometheus/log
+go build namenode_exporter.go
+go build resource_manager_exporter.go
+```
+
+Help on flags of namenode_exporter:
 ```
 -namenode.jmx.url string
     Hadoop JMX URL. (default "http://localhost:50070/jmx")
@@ -11,7 +19,7 @@ Help on flags of namenode:
     Path under which to expose metrics. (default "/metrics")
 ```
 
-Help on flags of resource manager:
+Help on flags of resource_manager_exporter:
 ```
 -resource_manager.url string
     Hadoop Resource Manager URL. (default "http://localhost:8088")
