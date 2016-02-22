@@ -32,8 +32,8 @@ type Exporter struct {
 	CorruptBlocks            prometheus.Gauge
 	ExcessBlocks             prometheus.Gauge
 	StaleDataNodes           prometheus.Gauge
-	pnGcCount               prometheus.Counter
-	pnGcTime                prometheus.Counter
+	pnGcCount                prometheus.Counter
+	pnGcTime                 prometheus.Counter
 	cmsGcCount               prometheus.Counter
 	cmsGcTime                prometheus.Counter
 	heapMemoryUsageCommitted prometheus.Gauge
