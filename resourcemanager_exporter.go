@@ -11,13 +11,13 @@ import (
 )
 
 const (
-	namespace = "resource_manager"
+	namespace = "resourcemanager"
 )
 
 var (
 	listenAddress      = flag.String("web.listen-address", ":9088", "Address on which to expose metrics and web interface.")
 	metricsPath        = flag.String("web.telemetry-path", "/metrics", "Path under which to expose metrics.")
-	resourceManagerUrl = flag.String("resource_manager.url", "http://localhost:8088", "Hadoop Resource Manager URL.")
+	resourceManagerUrl = flag.String("resourcemanager.url", "http://localhost:8088", "Hadoop ResourceManager URL.")
 )
 
 type Exporter struct {
@@ -300,9 +300,9 @@ func main() {
 	http.Handle(*metricsPath, prometheus.Handler())
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(`<html>
-		<head><title>Resource Manager Exporter</title></head>
+		<head><title>ResourceManager Exporter</title></head>
 		<body>
-		<h1>Resource Manager Exporter</h1>
+		<h1>ResourceManager Exporter</h1>
 		<p><a href="` + *metricsPath + `">Metrics</a></p>
 		</body>
 		</html>`))
