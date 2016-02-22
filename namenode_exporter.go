@@ -32,6 +32,8 @@ type Exporter struct {
 	CorruptBlocks            prometheus.Gauge
 	ExcessBlocks             prometheus.Gauge
 	StaleDataNodes           prometheus.Gauge
+	pnGcCount               prometheus.Counter
+	pnGcTime                prometheus.Counter
 	cmsGcCount               prometheus.Counter
 	cmsGcTime                prometheus.Counter
 	heapMemoryUsageCommitted prometheus.Gauge
@@ -93,6 +95,16 @@ func NewExporter(url string) *Exporter {
 			Name:      "StaleDataNodes",
 			Help:      "StaleDataNodes",
 		}),
+		pnGcCount: prometheus.NewCounter(prometheus.CounterOpts{
+			Namespace: namespace,
+			Name:      "ParNew_CollectionCount",
+			Help:      "ParNew GC Count",
+		}),
+		pnGcTime: prometheus.NewCounter(prometheus.CounterOpts{
+			Namespace: namespace,
+			Name:      "ParNew_CollectionTime",
+			Help:      "ParNew GC Time",
+		}),
 		cmsGcCount: prometheus.NewCounter(prometheus.CounterOpts{
 			Namespace: namespace,
 			Name:      "ConcurrentMarkSweep_CollectionCount",
@@ -138,7 +150,10 @@ func (e *Exporter) Describe(ch chan<- *prometheus.Desc) {
 	e.CorruptBlocks.Describe(ch)
 	e.ExcessBlocks.Describe(ch)
 	e.StaleDataNodes.Describe(ch)
+	e.pnGcCount.Describe(ch)
+	e.pnGcTime.Describe(ch)
 	e.cmsGcCount.Describe(ch)
+	e.cmsGcTime.Describe(ch)
 	e.heapMemoryUsageCommitted.Describe(ch)
 	e.heapMemoryUsageInit.Describe(ch)
 	e.heapMemoryUsageMax.Describe(ch)
@@ -224,6 +239,10 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 			e.ExcessBlocks.Set(nameDataMap["ExcessBlocks"].(float64))
 			e.StaleDataNodes.Set(nameDataMap["StaleDataNodes"].(float64))
 		}
+		if nameDataMap["name"] == "java.lang:type=GarbageCollector,name=ParNew" {
+			e.pnGcCount.Set(nameDataMap["CollectionCount"].(float64))
+			e.pnGcTime.Set(nameDataMap["CollectionTime"].(float64))
+		}
 		if nameDataMap["name"] == "java.lang:type=GarbageCollector,name=ConcurrentMarkSweep" {
 			e.cmsGcCount.Set(nameDataMap["CollectionCount"].(float64))
 			e.cmsGcTime.Set(nameDataMap["CollectionTime"].(float64))
@@ -257,6 +276,8 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 	e.CorruptBlocks.Collect(ch)
 	e.ExcessBlocks.Collect(ch)
 	e.StaleDataNodes.Collect(ch)
+	e.pnGcCount.Collect(ch)
+	e.pnGcTime.Collect(ch)
 	e.cmsGcCount.Collect(ch)
 	e.cmsGcTime.Collect(ch)
 	e.heapMemoryUsageCommitted.Collect(ch)
