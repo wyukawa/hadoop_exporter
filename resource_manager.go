@@ -17,7 +17,7 @@ const (
 var (
 	listenAddress      = flag.String("web.listen-address", ":9088", "Address on which to expose metrics and web interface.")
 	metricsPath        = flag.String("web.telemetry-path", "/metrics", "Path under which to expose metrics.")
-	resourceManagerUrl = flag.String("resource_manager.url", "http://localhost:8088", "Hadoop Resouce Manager URL.")
+	resourceManagerUrl = flag.String("resource_manager.url", "http://localhost:8088", "Hadoop Resource Manager URL.")
 )
 
 type Exporter struct {
