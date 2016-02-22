@@ -229,14 +229,14 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 			e.cmsGcTime.Set(nameDataMap["CollectionTime"].(float64))
 		}
 		/*
-				"name" : "java.lang:type=Memory",
-		    "modelerType" : "sun.management.MemoryImpl",
-		    "HeapMemoryUsage" : {
-		      "committed" : 1060372480,
-		      "init" : 1073741824,
-		      "max" : 1060372480,
-		      "used" : 124571464
-		    },
+			"name" : "java.lang:type=Memory",
+			"modelerType" : "sun.management.MemoryImpl",
+			"HeapMemoryUsage" : {
+				"committed" : 1060372480,
+				"init" : 1073741824,
+				"max" : 1060372480,
+				"used" : 124571464
+			},
 		*/
 		if nameDataMap["name"] == "java.lang:type=Memory" {
 			heapMemoryUsage := nameDataMap["HeapMemoryUsage"].(map[string]interface{})
