@@ -277,7 +277,7 @@ func main() {
 		w.Write([]byte(`<html>
 		<head><title>NameNode Exporter</title></head>
 		<body>
-		<h1>Node Exporter</h1>
+		<h1>NameNode Exporter</h1>
 		<p><a href="` + *metricsPath + `">Metrics</a></p>
 		</body>
 		</html>`))

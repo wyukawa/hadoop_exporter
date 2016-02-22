@@ -302,7 +302,7 @@ func main() {
 		w.Write([]byte(`<html>
 		<head><title>Resource Manager Exporter</title></head>
 		<body>
-		<h1>Node Exporter</h1>
+		<h1>Resource Manager Exporter</h1>
 		<p><a href="` + *metricsPath + `">Metrics</a></p>
 		</body>
 		</html>`))
