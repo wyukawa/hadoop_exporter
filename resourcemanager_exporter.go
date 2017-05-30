@@ -35,8 +35,8 @@ type Exporter struct {
 	appsFailed            prometheus.Gauge
 	appsRunning           prometheus.Gauge
 	appsPending           prometheus.Gauge
-	appsCompleted         prometheus.Counter
-	appsSubmitted         prometheus.Counter
+	appsCompleted         prometheus.Gauge
+	appsSubmitted         prometheus.Gauge
 	allocatedMB           prometheus.Gauge
 	reservedVirtualCores  prometheus.Gauge
 	availableVirtualCores prometheus.Gauge
@@ -115,12 +115,12 @@ func NewExporter(url string) *Exporter {
 			Name:      "appsPending",
 			Help:      "appsPending",
 		}),
-		appsCompleted: prometheus.NewCounter(prometheus.CounterOpts{
+		appsCompleted: prometheus.NewGauge(prometheus.GaugeOpts{
 			Namespace: namespace,
 			Name:      "appsCompleted",
 			Help:      "appsCompleted",
 		}),
-		appsSubmitted: prometheus.NewCounter(prometheus.CounterOpts{
+		appsSubmitted: prometheus.NewGauge(prometheus.GaugeOpts{
 			Namespace: namespace,
 			Name:      "appsSubmitted",
 			Help:      "appsSubmitted",
