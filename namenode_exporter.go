@@ -239,14 +239,14 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 			e.ExcessBlocks.Set(nameDataMap["ExcessBlocks"].(float64))
 			e.StaleDataNodes.Set(nameDataMap["StaleDataNodes"].(float64))
 		}
-		if nameDataMap["name"] == "java.lang:type=GarbageCollector,name=ParNew" {
+	/*	if nameDataMap["name"] == "java.lang:type=GarbageCollector,name=ParNew" {
 			e.pnGcCount.Set(nameDataMap["CollectionCount"].(float64))
 			e.pnGcTime.Set(nameDataMap["CollectionTime"].(float64))
 		}
 		if nameDataMap["name"] == "java.lang:type=GarbageCollector,name=ConcurrentMarkSweep" {
 			e.cmsGcCount.Set(nameDataMap["CollectionCount"].(float64))
 			e.cmsGcTime.Set(nameDataMap["CollectionTime"].(float64))
-		}
+		} */
 		/*
 			"name" : "java.lang:type=Memory",
 			"modelerType" : "sun.management.MemoryImpl",
