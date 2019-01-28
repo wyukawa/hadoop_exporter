@@ -12,6 +12,7 @@ import (
 
 const (
 	namespace = "namenode"
+	maxIdleConnections = 10
 )
 
 var (
@@ -21,26 +22,39 @@ var (
 )
 
 type Exporter struct {
-	url                      string
-	MissingBlocks            prometheus.Gauge
-	CapacityTotal            prometheus.Gauge
-	CapacityUsed             prometheus.Gauge
-	CapacityRemaining        prometheus.Gauge
-	CapacityUsedNonDFS       prometheus.Gauge
-	BlocksTotal              prometheus.Gauge
-	FilesTotal               prometheus.Gauge
-	CorruptBlocks            prometheus.Gauge
-	ExcessBlocks             prometheus.Gauge
-	StaleDataNodes           prometheus.Gauge
-	pnGcCount                prometheus.Gauge
-	pnGcTime                 prometheus.Gauge
-	cmsGcCount               prometheus.Gauge
-	cmsGcTime                prometheus.Gauge
-	heapMemoryUsageCommitted prometheus.Gauge
-	heapMemoryUsageInit      prometheus.Gauge
-	heapMemoryUsageMax       prometheus.Gauge
-	heapMemoryUsageUsed      prometheus.Gauge
-	isActive                 prometheus.Gauge
+	url                                 string
+	MissingBlocks                       prometheus.Gauge
+	CapacityTotal                       prometheus.Gauge
+	CapacityUsed                        prometheus.Gauge
+	CapacityRemaining                   prometheus.Gauge
+	CapacityUsedNonDFS                  prometheus.Gauge
+	BlocksTotal                         prometheus.Gauge
+	FilesTotal                          prometheus.Gauge
+	CorruptBlocks                       prometheus.Gauge
+	ExcessBlocks                        prometheus.Gauge
+	StaleDataNodes                      prometheus.Gauge
+	pnGcCount                           prometheus.Gauge
+	pnGcTime                            prometheus.Gauge
+	cmsGcCount                          prometheus.Gauge
+	cmsGcTime                           prometheus.Gauge
+	heapMemoryUsageCommitted            prometheus.Gauge
+	heapMemoryUsageInit                 prometheus.Gauge
+	heapMemoryUsageMax                  prometheus.Gauge
+	heapMemoryUsageUsed                 prometheus.Gauge
+	isActive                            prometheus.Gauge
+	BlockCapacity                       prometheus.Gauge
+	TotalLoad                           prometheus.Gauge
+    UnderReplicatedBlocks               prometheus.Gauge
+    VolumeFailuresTotal                 prometheus.Gauge
+    NumLiveDataNodes                    prometheus.Gauge
+    NumDeadDataNodes                    prometheus.Gauge
+    GcCountConcurrentMarkSweep          prometheus.Gauge
+    GcTimeMillisConcurrentMarkSweep     prometheus.Gauge
+    MemNonHeapUsedM                     prometheus.Gauge
+    MemNonHeapCommittedM                prometheus.Gauge
+    MemHeapUsedM                        prometheus.Gauge
+    MemHeapCommittedM                   prometheus.Gauge
+    MemHeapMaxM                         prometheus.Gauge
 }
 
 func NewExporter(url string) *Exporter {
@@ -141,6 +155,71 @@ func NewExporter(url string) *Exporter {
 			Name:      "isActive",
 			Help:      "isActive",
 		}),
+		BlockCapacity: prometheus.NewGauge(prometheus.GaugeOpts{
+			Namespace: namespace,
+			Name:      "BlockCapacity",
+			Help:      "BlockCapacity",
+		}),
+		TotalLoad: prometheus.NewGauge(prometheus.GaugeOpts{
+			Namespace: namespace,
+			Name:      "TotalLoad",
+			Help:      "TotalLoad",
+		}),
+		UnderReplicatedBlocks: prometheus.NewGauge(prometheus.GaugeOpts{
+			Namespace: namespace,
+			Name:      "UnderReplicatedBlocks",
+			Help:      "UnderReplicatedBlocks",
+		}),
+		VolumeFailuresTotal: prometheus.NewGauge(prometheus.GaugeOpts{
+			Namespace: namespace,
+			Name:      "VolumeFailuresTotal",
+			Help:      "VolumeFailuresTotal",
+		}),
+		NumLiveDataNodes: prometheus.NewGauge(prometheus.GaugeOpts{
+			Namespace: namespace,
+			Name:      "NumLiveDataNodes",
+			Help:      "NumLiveDataNodes",
+		}),
+		NumDeadDataNodes: prometheus.NewGauge(prometheus.GaugeOpts{
+			Namespace: namespace,
+			Name:      "NumDeadDataNodes",
+			Help:      "NumDeadDataNodes",
+		}),
+		GcCountConcurrentMarkSweep: prometheus.NewGauge(prometheus.GaugeOpts{
+			Namespace: namespace,
+			Name:      "GcCountConcurrentMarkSweep",
+			Help:      "GcCountConcurrentMarkSweep",
+		}),
+		GcTimeMillisConcurrentMarkSweep: prometheus.NewGauge(prometheus.GaugeOpts{
+			Namespace: namespace,
+			Name:      "GcTimeMillisConcurrentMarkSweep",
+			Help:      "GcTimeMillisConcurrentMarkSweep",
+		}),
+		MemNonHeapUsedM: prometheus.NewGauge(prometheus.GaugeOpts{
+			Namespace: namespace,
+			Name:      "MemNonHeapUsedM",
+			Help:      "MemNonHeapUsedM",
+		}),
+		MemNonHeapCommittedM: prometheus.NewGauge(prometheus.GaugeOpts{
+			Namespace: namespace,
+			Name:      "MemNonHeapCommittedM",
+			Help:      "MemNonHeapCommittedM",
+		}),
+		MemHeapUsedM: prometheus.NewGauge(prometheus.GaugeOpts{
+			Namespace: namespace,
+			Name:      "MemHeapUsedM",
+			Help:      "MemHeapUsedM",
+		}),
+		MemHeapCommittedM: prometheus.NewGauge(prometheus.GaugeOpts{
+			Namespace: namespace,
+			Name:      "MemHeapCommittedM",
+			Help:      "MemHeapCommittedM",
+		}),
+		MemHeapMaxM: prometheus.NewGauge(prometheus.GaugeOpts{
+			Namespace: namespace,
+			Name:      "MemHeapMaxM",
+			Help:      "MemHeapMaxM",
+		}),
 	}
 }
 
@@ -165,11 +244,26 @@ func (e *Exporter) Describe(ch chan<- *prometheus.Desc) {
 	e.heapMemoryUsageMax.Describe(ch)
 	e.heapMemoryUsageUsed.Describe(ch)
 	e.isActive.Describe(ch)
+	e.BlockCapacity.Describe(ch)
+	e.TotalLoad.Describe(ch)
+	e.UnderReplicatedBlocks.Describe(ch)
+	e.VolumeFailuresTotal.Describe(ch)
+	e.NumLiveDataNodes.Describe(ch)
+	e.NumDeadDataNodes.Describe(ch)
+	e.GcCountConcurrentMarkSweep.Describe(ch)
+	e.GcTimeMillisConcurrentMarkSweep.Describe(ch)
+	e.MemNonHeapUsedM.Describe(ch)
+	e.MemNonHeapCommittedM.Describe(ch)
+	e.MemHeapUsedM.Describe(ch)
+	e.MemHeapCommittedM.Describe(ch)
+	e.MemHeapMaxM.Describe(ch)
 }
 
 // Collect implements the prometheus.Collector interface.
 func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
-	resp, err := http.Get(e.url)
+    tr := &http.Transport {MaxIdleConns: maxIdleConnections}
+    client := &http.Client{Transport: tr}
+	resp, err := client.Get(e.url)
 	if err != nil {
 		log.Error(err)
 	}
@@ -245,6 +339,23 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 			e.CorruptBlocks.Set(nameDataMap["CorruptBlocks"].(float64))
 			e.ExcessBlocks.Set(nameDataMap["ExcessBlocks"].(float64))
 			e.StaleDataNodes.Set(nameDataMap["StaleDataNodes"].(float64))
+			e.BlockCapacity.Set(nameDataMap["BlockCapacity"].(float64))
+			e.TotalLoad.Set(nameDataMap["TotalLoad"].(float64))
+			e.UnderReplicatedBlocks.Set(nameDataMap["UnderReplicatedBlocks"].(float64))
+		}
+		if nameDataMap["name"] == "Hadoop:service=NameNode,name=FSNamesystemState" {
+			e.VolumeFailuresTotal.Set(nameDataMap["VolumeFailuresTotal"].(float64))
+			e.NumLiveDataNodes.Set(nameDataMap["NumLiveDataNodes"].(float64))
+			e.NumDeadDataNodes.Set(nameDataMap["NumDeadDataNodes"].(float64))
+		}
+		if nameDataMap["name"] == "Hadoop:service=NameNode,name=JvmMetrics" {
+			e.GcCountConcurrentMarkSweep.Set(nameDataMap["GcCountConcurrentMarkSweep"].(float64))
+			e.GcTimeMillisConcurrentMarkSweep.Set(nameDataMap["GcTimeMillisConcurrentMarkSweep"].(float64))
+			e.MemNonHeapUsedM.Set(nameDataMap["MemNonHeapUsedM"].(float64))
+			e.MemNonHeapCommittedM.Set(nameDataMap["MemNonHeapCommittedM"].(float64))
+			e.MemHeapUsedM.Set(nameDataMap["MemHeapUsedM"].(float64))
+			e.MemHeapCommittedM.Set(nameDataMap["MemHeapCommittedM"].(float64))
+			e.MemHeapMaxM.Set(nameDataMap["MemHeapMaxM"].(float64))
 		}
 		if nameDataMap["name"] == "java.lang:type=GarbageCollector,name=ParNew" {
 			e.pnGcCount.Set(nameDataMap["CollectionCount"].(float64))
@@ -300,6 +411,19 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 	e.heapMemoryUsageMax.Collect(ch)
 	e.heapMemoryUsageUsed.Collect(ch)
 	e.isActive.Collect(ch)
+	e.BlockCapacity.Collect(ch)
+	e.TotalLoad.Collect(ch)
+	e.UnderReplicatedBlocks.Collect(ch)
+	e.VolumeFailuresTotal.Collect(ch)
+	e.NumLiveDataNodes.Collect(ch)
+	e.NumDeadDataNodes.Collect(ch)
+	e.GcCountConcurrentMarkSweep.Collect(ch)
+	e.GcTimeMillisConcurrentMarkSweep.Collect(ch)
+	e.MemNonHeapUsedM.Collect(ch)
+	e.MemNonHeapCommittedM.Collect(ch)
+	e.MemHeapUsedM.Collect(ch)
+	e.MemHeapCommittedM.Collect(ch)
+	e.MemHeapMaxM.Collect(ch)
 }
 
 func main() {
@@ -315,6 +439,7 @@ func main() {
 		<head><title>NameNode Exporter</title></head>
 		<body>
 		<h1>NameNode Exporter</h1>
+		<p>Parsing JMX counters over HTTP/HTTPS.</p>
 		<p><a href="` + *metricsPath + `">Metrics</a></p>
 		</body>
 		</html>`))
