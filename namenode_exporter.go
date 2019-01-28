@@ -12,6 +12,7 @@ import (
 
 const (
 	namespace = "namenode"
+	maxIdleConnections = 10
 )
 
 var (
@@ -169,7 +170,9 @@ func (e *Exporter) Describe(ch chan<- *prometheus.Desc) {
 
 // Collect implements the prometheus.Collector interface.
 func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
-	resp, err := http.Get(e.url)
+    tr := &http.Transport {MaxIdleConns: maxIdleConnections}
+    client := &http.Client{Transport: tr}
+	resp, err := client.Get(e.url)
 	if err != nil {
 		log.Error(err)
 	}
