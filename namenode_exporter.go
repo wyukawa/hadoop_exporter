@@ -172,6 +172,7 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 	resp, err := http.Get(e.url)
 	if err != nil {
 		log.Error(err)
+		return
 	}
 	defer resp.Body.Close()
 	data, err := ioutil.ReadAll(resp.Body)
