@@ -200,6 +200,7 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 	resp, err := http.Get(e.url + "/ws/v1/cluster/metrics")
 	if err != nil {
 		log.Error(err)
+		return
 	}
 	defer resp.Body.Close()
 	data, err := ioutil.ReadAll(resp.Body)
