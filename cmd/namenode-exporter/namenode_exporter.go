@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	namespace = "namenode"
+	namespace          = "namenode"
 	maxIdleConnections = 10
 )
 
@@ -22,39 +22,39 @@ var (
 )
 
 type Exporter struct {
-	url                                 string
-	MissingBlocks                       prometheus.Gauge
-	CapacityTotal                       prometheus.Gauge
-	CapacityUsed                        prometheus.Gauge
-	CapacityRemaining                   prometheus.Gauge
-	CapacityUsedNonDFS                  prometheus.Gauge
-	BlocksTotal                         prometheus.Gauge
-	FilesTotal                          prometheus.Gauge
-	CorruptBlocks                       prometheus.Gauge
-	ExcessBlocks                        prometheus.Gauge
-	StaleDataNodes                      prometheus.Gauge
-	pnGcCount                           prometheus.Gauge
-	pnGcTime                            prometheus.Gauge
-	cmsGcCount                          prometheus.Gauge
-	cmsGcTime                           prometheus.Gauge
-	heapMemoryUsageCommitted            prometheus.Gauge
-	heapMemoryUsageInit                 prometheus.Gauge
-	heapMemoryUsageMax                  prometheus.Gauge
-	heapMemoryUsageUsed                 prometheus.Gauge
-	isActive                            prometheus.Gauge
-	BlockCapacity                       prometheus.Gauge
-	TotalLoad                           prometheus.Gauge
-    UnderReplicatedBlocks               prometheus.Gauge
-    VolumeFailuresTotal                 prometheus.Gauge
-    NumLiveDataNodes                    prometheus.Gauge
-    NumDeadDataNodes                    prometheus.Gauge
-    GcCountConcurrentMarkSweep          prometheus.Gauge
-    GcTimeMillisConcurrentMarkSweep     prometheus.Gauge
-    MemNonHeapUsedM                     prometheus.Gauge
-    MemNonHeapCommittedM                prometheus.Gauge
-    MemHeapUsedM                        prometheus.Gauge
-    MemHeapCommittedM                   prometheus.Gauge
-    MemHeapMaxM                         prometheus.Gauge
+	url                             string
+	MissingBlocks                   prometheus.Gauge
+	CapacityTotal                   prometheus.Gauge
+	CapacityUsed                    prometheus.Gauge
+	CapacityRemaining               prometheus.Gauge
+	CapacityUsedNonDFS              prometheus.Gauge
+	BlocksTotal                     prometheus.Gauge
+	FilesTotal                      prometheus.Gauge
+	CorruptBlocks                   prometheus.Gauge
+	ExcessBlocks                    prometheus.Gauge
+	StaleDataNodes                  prometheus.Gauge
+	pnGcCount                       prometheus.Gauge
+	pnGcTime                        prometheus.Gauge
+	cmsGcCount                      prometheus.Gauge
+	cmsGcTime                       prometheus.Gauge
+	heapMemoryUsageCommitted        prometheus.Gauge
+	heapMemoryUsageInit             prometheus.Gauge
+	heapMemoryUsageMax              prometheus.Gauge
+	heapMemoryUsageUsed             prometheus.Gauge
+	isActive                        prometheus.Gauge
+	BlockCapacity                   prometheus.Gauge
+	TotalLoad                       prometheus.Gauge
+	UnderReplicatedBlocks           prometheus.Gauge
+	VolumeFailuresTotal             prometheus.Gauge
+	NumLiveDataNodes                prometheus.Gauge
+	NumDeadDataNodes                prometheus.Gauge
+	GcCountConcurrentMarkSweep      prometheus.Gauge
+	GcTimeMillisConcurrentMarkSweep prometheus.Gauge
+	MemNonHeapUsedM                 prometheus.Gauge
+	MemNonHeapCommittedM            prometheus.Gauge
+	MemHeapUsedM                    prometheus.Gauge
+	MemHeapCommittedM               prometheus.Gauge
+	MemHeapMaxM                     prometheus.Gauge
 }
 
 func NewExporter(url string) *Exporter {
@@ -261,8 +261,8 @@ func (e *Exporter) Describe(ch chan<- *prometheus.Desc) {
 
 // Collect implements the prometheus.Collector interface.
 func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
-    tr := &http.Transport {MaxIdleConns: maxIdleConnections}
-    client := &http.Client{Transport: tr}
+	tr := &http.Transport{MaxIdleConns: maxIdleConnections}
+	client := &http.Client{Transport: tr}
 	resp, err := client.Get(e.url)
 	if err != nil {
 		log.Error(err)
@@ -349,8 +349,12 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 			e.NumDeadDataNodes.Set(nameDataMap["NumDeadDataNodes"].(float64))
 		}
 		if nameDataMap["name"] == "Hadoop:service=NameNode,name=JvmMetrics" {
-			e.GcCountConcurrentMarkSweep.Set(nameDataMap["GcCountConcurrentMarkSweep"].(float64))
-			e.GcTimeMillisConcurrentMarkSweep.Set(nameDataMap["GcTimeMillisConcurrentMarkSweep"].(float64))
+			if _, ok := nameDataMap["GcCountConcurrentMarkSweep"]; ok {
+				e.GcCountConcurrentMarkSweep.Set(nameDataMap["GcCountConcurrentMarkSweep"].(float64))
+			}
+			if _, ok := nameDataMap["GcTimeMillisConcurrentMarkSweep"]; ok {
+				e.GcTimeMillisConcurrentMarkSweep.Set(nameDataMap["GcTimeMillisConcurrentMarkSweep"].(float64))
+			}
 			e.MemNonHeapUsedM.Set(nameDataMap["MemNonHeapUsedM"].(float64))
 			e.MemNonHeapCommittedM.Set(nameDataMap["MemNonHeapCommittedM"].(float64))
 			e.MemHeapUsedM.Set(nameDataMap["MemHeapUsedM"].(float64))
