@@ -17,6 +17,8 @@ Help on flags of namenode_exporter:
     Address on which to expose metrics and web interface. (default ":9070")
 -web.telemetry-path string
     Path under which to expose metrics. (default "/metrics")
+-const.labels cluster:hd1;idc:idc1
+    Const Lables
 ```
 
 Help on flags of resourcemanager_exporter:
@@ -27,6 +29,8 @@ Help on flags of resourcemanager_exporter:
     Address on which to expose metrics and web interface. (default ":9088")
 -web.telemetry-path string
     Path under which to expose metrics. (default "/metrics")
+-const.labels cluster:hd1;idc:idc1
+    Const Lables
 ```
 
-Tested on HDP2.3
+Tested on HDP2.3, CDH5.x

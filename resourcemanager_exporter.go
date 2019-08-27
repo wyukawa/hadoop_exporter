@@ -3,8 +3,10 @@ package main
 import (
 	"encoding/json"
 	"flag"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"io/ioutil"
 	"net/http"
+	"strings"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/log"
@@ -18,6 +20,7 @@ var (
 	listenAddress      = flag.String("web.listen-address", ":9088", "Address on which to expose metrics and web interface.")
 	metricsPath        = flag.String("web.telemetry-path", "/metrics", "Path under which to expose metrics.")
 	resourceManagerUrl = flag.String("resourcemanager.url", "http://localhost:8088", "Hadoop ResourceManager URL.")
+	constLabels        = flag.String("const.labels", "", "cluster:dc;idc:dc1")
 )
 
 type Exporter struct {
@@ -47,123 +50,146 @@ type Exporter struct {
 	totalMB               prometheus.Gauge
 }
 
-func NewExporter(url string) *Exporter {
+func NewExporter(url string, labels map[string]string) *Exporter {
 	return &Exporter{
 		url: url,
 		activeNodes: prometheus.NewGauge(prometheus.GaugeOpts{
 			Namespace: namespace,
 			Name:      "activeNodes",
 			Help:      "activeNodes",
+			ConstLabels: labels,
 		}),
 		rebootedNodes: prometheus.NewGauge(prometheus.GaugeOpts{
 			Namespace: namespace,
 			Name:      "rebootedNodes",
 			Help:      "rebootedNodes",
+			ConstLabels: labels,
 		}),
 		decommissionedNodes: prometheus.NewGauge(prometheus.GaugeOpts{
 			Namespace: namespace,
 			Name:      "decommissionedNodes",
 			Help:      "decommissionedNodes",
+			ConstLabels: labels,
 		}),
 		unhealthyNodes: prometheus.NewGauge(prometheus.GaugeOpts{
 			Namespace: namespace,
 			Name:      "unhealthyNodes",
 			Help:      "unhealthyNodes",
+			ConstLabels: labels,
 		}),
 		lostNodes: prometheus.NewGauge(prometheus.GaugeOpts{
 			Namespace: namespace,
 			Name:      "lostNodes",
 			Help:      "lostNodes",
+			ConstLabels: labels,
 		}),
 		totalNodes: prometheus.NewGauge(prometheus.GaugeOpts{
 			Namespace: namespace,
 			Name:      "totalNodes",
 			Help:      "totalNodes",
+			ConstLabels: labels,
 		}),
 		totalVirtualCores: prometheus.NewGauge(prometheus.GaugeOpts{
 			Namespace: namespace,
 			Name:      "totalVirtualCores",
 			Help:      "totalVirtualCores",
+			ConstLabels: labels,
 		}),
 		availableMB: prometheus.NewGauge(prometheus.GaugeOpts{
 			Namespace: namespace,
 			Name:      "availableMB",
 			Help:      "availableMB",
+			ConstLabels: labels,
 		}),
 		reservedMB: prometheus.NewGauge(prometheus.GaugeOpts{
 			Namespace: namespace,
 			Name:      "reservedMB",
 			Help:      "reservedMB",
+			ConstLabels: labels,
 		}),
 		appsKilled: prometheus.NewGauge(prometheus.GaugeOpts{
 			Namespace: namespace,
 			Name:      "appsKilled",
 			Help:      "appsKilled",
+			ConstLabels: labels,
 		}),
 		appsFailed: prometheus.NewGauge(prometheus.GaugeOpts{
 			Namespace: namespace,
 			Name:      "appsFailed",
 			Help:      "appsFailed",
+			ConstLabels: labels,
 		}),
 		appsRunning: prometheus.NewGauge(prometheus.GaugeOpts{
 			Namespace: namespace,
 			Name:      "appsRunning",
 			Help:      "appsRunning",
+			ConstLabels: labels,
 		}),
 		appsPending: prometheus.NewGauge(prometheus.GaugeOpts{
 			Namespace: namespace,
 			Name:      "appsPending",
 			Help:      "appsPending",
+			ConstLabels: labels,
 		}),
 		appsCompleted: prometheus.NewGauge(prometheus.GaugeOpts{
 			Namespace: namespace,
 			Name:      "appsCompleted",
 			Help:      "appsCompleted",
+			ConstLabels: labels,
 		}),
 		appsSubmitted: prometheus.NewGauge(prometheus.GaugeOpts{
 			Namespace: namespace,
 			Name:      "appsSubmitted",
 			Help:      "appsSubmitted",
+			ConstLabels: labels,
 		}),
 		allocatedMB: prometheus.NewGauge(prometheus.GaugeOpts{
 			Namespace: namespace,
 			Name:      "allocatedMB",
 			Help:      "allocatedMB",
+			ConstLabels: labels,
 		}),
 		reservedVirtualCores: prometheus.NewGauge(prometheus.GaugeOpts{
 			Namespace: namespace,
 			Name:      "reservedVirtualCores",
 			Help:      "reservedVirtualCores",
+			ConstLabels: labels,
 		}),
 		availableVirtualCores: prometheus.NewGauge(prometheus.GaugeOpts{
 			Namespace: namespace,
 			Name:      "availableVirtualCores",
 			Help:      "availableVirtualCores",
+			ConstLabels: labels,
 		}),
 		allocatedVirtualCores: prometheus.NewGauge(prometheus.GaugeOpts{
 			Namespace: namespace,
 			Name:      "allocatedVirtualCores",
 			Help:      "allocatedVirtualCores",
+			ConstLabels: labels,
 		}),
 		containersAllocated: prometheus.NewGauge(prometheus.GaugeOpts{
 			Namespace: namespace,
 			Name:      "containersAllocated",
 			Help:      "containersAllocated",
+			ConstLabels: labels,
 		}),
 		containersReserved: prometheus.NewGauge(prometheus.GaugeOpts{
 			Namespace: namespace,
 			Name:      "containersReserved",
 			Help:      "containersReserved",
+			ConstLabels: labels,
 		}),
 		containersPending: prometheus.NewGauge(prometheus.GaugeOpts{
 			Namespace: namespace,
 			Name:      "containersPending",
 			Help:      "containersPending",
+			ConstLabels: labels,
 		}),
 		totalMB: prometheus.NewGauge(prometheus.GaugeOpts{
 			Namespace: namespace,
 			Name:      "totalMB",
 			Help:      "totalMB",
+			ConstLabels: labels,
 		}),
 	}
 }
@@ -293,11 +319,20 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 func main() {
 	flag.Parse()
 
-	exporter := NewExporter(*resourceManagerUrl)
+	constLabelMap := make(map[string]string)
+	if len(*constLabels) > 0 {
+		cLabels := strings.Split(*constLabels, ";")
+		for _, pair := range cLabels {
+			kv := strings.Split(pair, ":")
+			constLabelMap[kv[0]] = kv[1]
+		}
+	}
+
+	exporter := NewExporter(*resourceManagerUrl, constLabelMap)
 	prometheus.MustRegister(exporter)
 
 	log.Printf("Starting Server: %s", *listenAddress)
-	http.Handle(*metricsPath, prometheus.Handler())
+	http.Handle(*metricsPath, promhttp.Handler())
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(`<html>
 		<head><title>ResourceManager Exporter</title></head>
