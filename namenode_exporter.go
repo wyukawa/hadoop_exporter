@@ -3,8 +3,10 @@ package main
 import (
 	"encoding/json"
 	"flag"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"io/ioutil"
 	"net/http"
+	"strings"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/log"
@@ -18,6 +20,7 @@ var (
 	listenAddress  = flag.String("web.listen-address", ":9070", "Address on which to expose metrics and web interface.")
 	metricsPath    = flag.String("web.telemetry-path", "/metrics", "Path under which to expose metrics.")
 	namenodeJmxUrl = flag.String("namenode.jmx.url", "http://localhost:50070/jmx", "Hadoop JMX URL.")
+	constLabels    = flag.String("const.labels", "", "cluster:dc;idc:dc1")
 )
 
 type Exporter struct {
@@ -43,103 +46,122 @@ type Exporter struct {
 	isActive                 prometheus.Gauge
 }
 
-func NewExporter(url string) *Exporter {
+func NewExporter(url string, labels map[string]string) *Exporter {
 	return &Exporter{
 		url: url,
 		MissingBlocks: prometheus.NewGauge(prometheus.GaugeOpts{
 			Namespace: namespace,
 			Name:      "MissingBlocks",
 			Help:      "MissingBlocks",
+			ConstLabels: labels,
 		}),
 		CapacityTotal: prometheus.NewGauge(prometheus.GaugeOpts{
 			Namespace: namespace,
 			Name:      "CapacityTotal",
 			Help:      "CapacityTotal",
+			ConstLabels: labels,
 		}),
 		CapacityUsed: prometheus.NewGauge(prometheus.GaugeOpts{
 			Namespace: namespace,
 			Name:      "CapacityUsed",
 			Help:      "CapacityUsed",
+			ConstLabels: labels,
 		}),
 		CapacityRemaining: prometheus.NewGauge(prometheus.GaugeOpts{
 			Namespace: namespace,
 			Name:      "CapacityRemaining",
 			Help:      "CapacityRemaining",
+			ConstLabels: labels,
 		}),
 		CapacityUsedNonDFS: prometheus.NewGauge(prometheus.GaugeOpts{
 			Namespace: namespace,
 			Name:      "CapacityUsedNonDFS",
 			Help:      "CapacityUsedNonDFS",
+			ConstLabels: labels,
 		}),
 		BlocksTotal: prometheus.NewGauge(prometheus.GaugeOpts{
 			Namespace: namespace,
 			Name:      "BlocksTotal",
 			Help:      "BlocksTotal",
+			ConstLabels: labels,
 		}),
 		FilesTotal: prometheus.NewGauge(prometheus.GaugeOpts{
 			Namespace: namespace,
 			Name:      "FilesTotal",
 			Help:      "FilesTotal",
+			ConstLabels: labels,
 		}),
 		CorruptBlocks: prometheus.NewGauge(prometheus.GaugeOpts{
 			Namespace: namespace,
 			Name:      "CorruptBlocks",
 			Help:      "CorruptBlocks",
+			ConstLabels: labels,
 		}),
 		ExcessBlocks: prometheus.NewGauge(prometheus.GaugeOpts{
 			Namespace: namespace,
 			Name:      "ExcessBlocks",
 			Help:      "ExcessBlocks",
+			ConstLabels: labels,
 		}),
 		StaleDataNodes: prometheus.NewGauge(prometheus.GaugeOpts{
 			Namespace: namespace,
 			Name:      "StaleDataNodes",
 			Help:      "StaleDataNodes",
+			ConstLabels: labels,
 		}),
 		pnGcCount: prometheus.NewGauge(prometheus.GaugeOpts{
 			Namespace: namespace,
 			Name:      "ParNew_CollectionCount",
 			Help:      "ParNew GC Count",
+			ConstLabels: labels,
 		}),
 		pnGcTime: prometheus.NewGauge(prometheus.GaugeOpts{
 			Namespace: namespace,
 			Name:      "ParNew_CollectionTime",
 			Help:      "ParNew GC Time",
+			ConstLabels: labels,
 		}),
 		cmsGcCount: prometheus.NewGauge(prometheus.GaugeOpts{
 			Namespace: namespace,
 			Name:      "ConcurrentMarkSweep_CollectionCount",
 			Help:      "ConcurrentMarkSweep GC Count",
+			ConstLabels: labels,
 		}),
 		cmsGcTime: prometheus.NewGauge(prometheus.GaugeOpts{
 			Namespace: namespace,
 			Name:      "ConcurrentMarkSweep_CollectionTime",
 			Help:      "ConcurrentMarkSweep GC Time",
+			ConstLabels: labels,
 		}),
 		heapMemoryUsageCommitted: prometheus.NewGauge(prometheus.GaugeOpts{
 			Namespace: namespace,
 			Name:      "heapMemoryUsageCommitted",
 			Help:      "heapMemoryUsageCommitted",
+			ConstLabels: labels,
 		}),
 		heapMemoryUsageInit: prometheus.NewGauge(prometheus.GaugeOpts{
 			Namespace: namespace,
 			Name:      "heapMemoryUsageInit",
 			Help:      "heapMemoryUsageInit",
+			ConstLabels: labels,
 		}),
 		heapMemoryUsageMax: prometheus.NewGauge(prometheus.GaugeOpts{
 			Namespace: namespace,
 			Name:      "heapMemoryUsageMax",
 			Help:      "heapMemoryUsageMax",
+			ConstLabels: labels,
 		}),
 		heapMemoryUsageUsed: prometheus.NewGauge(prometheus.GaugeOpts{
 			Namespace: namespace,
 			Name:      "heapMemoryUsageUsed",
 			Help:      "heapMemoryUsageUsed",
+			ConstLabels: labels,
 		}),
 		isActive: prometheus.NewGauge(prometheus.GaugeOpts{
 			Namespace: namespace,
 			Name:      "isActive",
 			Help:      "isActive",
+			ConstLabels: labels,
 		}),
 	}
 }
@@ -305,11 +327,20 @@ func (e *Exporter) Collect(ch chan<- prometheus.Metric) {
 func main() {
 	flag.Parse()
 
-	exporter := NewExporter(*namenodeJmxUrl)
+	constLabelMap := make(map[string]string)
+	if len(*constLabels) > 0 {
+		cLabels := strings.Split(*constLabels, ";")
+		for _, pair := range cLabels {
+			kv := strings.Split(pair, ":")
+			constLabelMap[kv[0]] = kv[1]
+		}
+	}
+
+	exporter := NewExporter(*namenodeJmxUrl, constLabelMap)
 	prometheus.MustRegister(exporter)
 
 	log.Printf("Starting Server: %s", *listenAddress)
-	http.Handle(*metricsPath, prometheus.Handler())
+	http.Handle(*metricsPath, promhttp.Handler())
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(`<html>
 		<head><title>NameNode Exporter</title></head>
