@@ -3,10 +3,8 @@ Exports hadoop metrics via HTTP for Prometheus consumption.
 
 How to build
 ```
-go get github.com/prometheus/client_golang/prometheus
-go get github.com/prometheus/log
-go build namenode_exporter.go
-go build resourcemanager_exporter.go
+make namenode_exporter
+make resourcemanager_exporter
 ```
 
 Help on flags of namenode_exporter:
